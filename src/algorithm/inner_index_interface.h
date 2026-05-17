@@ -208,6 +208,12 @@ public:
                             "Index doesn't support GetMemoryUsageDetail");
     }
 
+    [[nodiscard]] virtual std::string
+    GetMemoryUsageBreakdown() const {
+        throw VsagException(ErrorType::UNSUPPORTED_INDEX_OPERATION,
+                            "Index doesn't support GetMemoryUsageBreakdown");
+    }
+
     virtual std::pair<int64_t, int64_t>
     GetMinAndMaxId() const {
         throw VsagException(ErrorType::UNSUPPORTED_INDEX_OPERATION,

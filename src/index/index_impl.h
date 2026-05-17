@@ -238,6 +238,11 @@ public:
         return this->inner_index_->GetMemoryUsageDetail();
     }
 
+    [[nodiscard]] std::string
+    GetMemoryUsageBreakdown() const override {
+        return this->inner_index_->GetMemoryUsageBreakdown();
+    }
+
     tl::expected<std::pair<int64_t, int64_t>, Error>
     GetMinAndMaxId() const override {
         SAFE_CALL(return this->inner_index_->GetMinAndMaxId());

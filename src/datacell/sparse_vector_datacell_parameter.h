@@ -38,9 +38,16 @@ public:
             fmt::format("sparse datacell parameters must contains {}", QUANTIZATION_PARAMS_KEY));
         this->quantizer_parameter =
             QuantizerParameter::GetQuantizerParameterByJson(json[QUANTIZATION_PARAMS_KEY]);
+/*
         CHECK_ARGUMENT(
             this->quantizer_parameter->GetTypeName() == QUANTIZATION_TYPE_VALUE_SPARSE,
             fmt::format("sparse datacell only support {}", QUANTIZATION_TYPE_VALUE_SPARSE));
+*/
+        CHECK_ARGUMENT(this->quantizer_parameter->GetTypeName() == QUANTIZATION_TYPE_VALUE_SPARSE ||
+                           this->quantizer_parameter->GetTypeName() == QUANTIZATION_TYPE_VALUE_MRP,
+                       fmt::format("sparse datacell only support {} or {}",
+                                   QUANTIZATION_TYPE_VALUE_SPARSE,
+                                   QUANTIZATION_TYPE_VALUE_MRP));
     }
 
     JsonType

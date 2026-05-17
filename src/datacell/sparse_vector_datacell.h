@@ -78,7 +78,7 @@ public:
         if (new_capacity <= this->max_capacity_) {
             return;
         }
-        uint64_t io_size = (new_capacity - total_count_) * max_code_size_ + current_offset_;
+        uint64_t io_size = (new_capacity - total_count_) * this->quantizer_->GetCodeSize() + current_offset_;
         this->io_->Resize(io_size);
         this->offset_io_->Resize(static_cast<uint64_t>(new_capacity) * sizeof(uint32_t));
         this->max_capacity_ = new_capacity;

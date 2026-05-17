@@ -137,6 +137,7 @@ make_instance(const FlattenInterfaceParamPtr& param, const IndexCommonParam& com
         return make_instance_with_tq<RaBitQuantizer<metric>, IOTemp, metric>(
             param, common_param, is_transform_quantizer);
     }
+
     if (actual_quant_type == QUANTIZATION_TYPE_VALUE_SPARSE and not is_transform_quantizer) {
         if constexpr (metric == MetricType::METRIC_TYPE_IP) {
             return make_instance_sparse<SparseQuantizer<metric>, IOTemp>(param, common_param);
@@ -146,6 +147,18 @@ make_instance(const FlattenInterfaceParamPtr& param, const IndexCommonParam& com
                                             static_cast<int>(metric)));
         }
     }
+    /*************** 新增 MRP 支持 ****************/
+
+    if (actual_quant_type == QUANTIZATION_TYPE_VALUE_MRP and not is_transform_quantizer) {
+        if constexpr (metric == MetricType::METRIC_TYPE_IP) {
+            return make_instance_sparse<MRPQuantizer<metric>, IOTemp>(param, common_param);
+        } else {
+            throw VsagException(ErrorType::INVALID_ARGUMENT,
+                                fmt::format("MRP quantization only supports IP metric, got {}",
+                                            static_cast<int>(metric)));
+        }
+    }
+    /***************      END      ***************/
 
     // Unsupported quantization type
     throw VsagException(ErrorType::INVALID_ARGUMENT,

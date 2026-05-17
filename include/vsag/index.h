@@ -857,6 +857,16 @@ public:
     }
 
     /**
+      * @brief Return the actual memory usage breakdown of every component (not serialization size).
+      *
+      * @return a json string with per-component GetMemoryUsage() values.
+      */
+    [[nodiscard]] virtual std::string
+    GetMemoryUsageBreakdown() const {
+        throw std::runtime_error("Index not support GetMemoryUsageBreakdown");
+    }
+
+    /**
       * @brief estimate the memory used by the index with given element counts
       *
       * @param num_elements

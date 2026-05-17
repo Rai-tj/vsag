@@ -349,6 +349,14 @@ HGraph::map_hgraph_param(const JsonType& hgraph_json) {
                 SQ4_UNIFORM_QUANTIZATION_TRUNC_RATE_KEY,
             },
         },
+        { // new begin
+            "doc_prune_ratio",  
+            {
+                BASE_CODES_KEY,
+                QUANTIZATION_PARAMS_KEY,
+                "doc_prune_ratio",  
+            },
+        }, // new end
         {
             RABITQ_PCA_DIM,
             {
@@ -1465,6 +1473,38 @@ HGraph::GetMemoryUsageDetail() const {
     }
     memory_usage["__total_size__"].SetInt(this->CalSerializeSize());
     return memory_usage.Dump();
+}
+
+std::string
+HGraph::GetMemoryUsageBreakdown() const {
+    JsonType breakdown;
+
+    breakdown["overhead"].SetInt(static_cast<int64_t>(sizeof(HGraph)));
+    breakdown["neighbors_mutex"].SetInt(this->neighbors_mutex_->GetMemoryUsage());
+    breakdown["pool"].SetInt(this->pool_->GetMemoryUsage());
+    breakdown["label_table"].SetInt(this->label_table_->GetMemoryUsage());
+    breakdown["basic_flatten_codes"].SetInt(this->basic_flatten_codes_->GetMemoryUsage());
+    breakdown["bottom_graph"].SetInt(this->bottom_graph_->GetMemoryUsage());
+
+    int64_t route_memory = 0;
+    for (auto& graph : this->route_graphs_) {
+        route_memory += graph->GetMemoryUsage();
+    }
+    breakdown["route_graphs"].SetInt(route_memory);
+
+    if (this->use_reorder_) {
+        breakdown["high_precise_codes"].SetInt(this->high_precise_codes_->GetMemoryUsage());
+    }
+    if (this->extra_infos_ != nullptr && this->extra_info_size_ > 0) {
+        breakdown["extra_infos"].SetInt(this->extra_infos_->GetMemoryUsage());
+    }
+    if (this->create_new_raw_vector_ && this->raw_vector_ != nullptr) {
+        breakdown["raw_vector"].SetInt(this->raw_vector_->GetMemoryUsage());
+    }
+
+    breakdown["__total__"].SetInt(this->GetMemoryUsage());
+
+    return breakdown.Dump();
 }
 
 float

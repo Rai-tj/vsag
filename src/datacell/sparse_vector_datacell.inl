@@ -93,15 +93,17 @@ SparseVectorDataCell<QuantTmpl, IOTmpl>::InsertVector(const void* vector, InnerI
     }
     auto* codes = reinterpret_cast<uint8_t*>(allocator_->Allocate(code_size));
     quantizer_->EncodeOne((const float*)vector, codes);
+    uint32_t actual_len = *reinterpret_cast<uint32_t*>(codes);
+    uint64_t actual_code_size = (actual_len * 2 + 1) * sizeof(uint32_t);
     uint32_t old_offset = 0;
     {
         std::lock_guard lock(current_offset_mutex_);
         old_offset = current_offset_;
-        current_offset_ += code_size;
+        current_offset_ += actual_code_size;
     }
     offset_io_->Write(
         (uint8_t*)&old_offset, sizeof(current_offset_), idx * sizeof(current_offset_));
-    io_->Write(codes, code_size, old_offset);
+    io_->Write(codes, actual_code_size, old_offset);
     allocator_->Deallocate(codes);
 }
 
@@ -173,7 +175,7 @@ SparseVectorDataCell<QuantTmpl, IOTmpl>::SparseVectorDataCell(
         std::make_shared<MemoryBlockIO>(Options::Instance().block_size_limit(), allocator_);
     this->max_code_size_ = (this->quantizer_->GetDim() * 2 + 1) * sizeof(uint32_t);
     this->max_capacity_ = 0;
-    this->code_size_ = this->quantizer_->GetCodeSize();
+    this->code_size_ = (this->quantizer_->GetDim() * 2 + 1) * sizeof(uint32_t);
 }
 
 template <typename QuantTmpl, typename IOTmpl>

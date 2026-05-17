@@ -108,7 +108,7 @@ SparseQuantizer<metric>::SparseQuantizer(const SparseQuantizerParamPtr& param,
                                          const IndexCommonParam& common_param)
     : SparseQuantizer<metric>(common_param.allocator_.get()) {
     this->dim_ = common_param.dim_;
-    this->code_size_ = common_param.dim_ * sizeof(float);
+    this->code_size_ = sizeof(uint32_t) + common_param.dim_ * sizeof(BufferEntry);
 }
 
 template <MetricType metric>

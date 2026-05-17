@@ -105,6 +105,9 @@ public:
     std::string
     GetMemoryUsageDetail() const override;
 
+    std::string
+    GetMemoryUsageBreakdown() const override;
+
     std::pair<int64_t, int64_t>
     GetMinAndMaxId() const override;
 
