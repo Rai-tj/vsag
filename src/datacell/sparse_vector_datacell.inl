@@ -38,7 +38,19 @@ void
 SparseVectorDataCell<QuantTmpl, IOTmpl>::Deserialize(lvalue_or_rvalue<StreamReader> reader) {
     FlattenInterface::Deserialize(reader);
     StreamReader::ReadObj(reader, current_offset_);
-    this->io_->Deserialize(reader);
+    // Deserialize only actual data (current_offset_ bytes), not the full io_ pre-allocation
+    constexpr uint64_t kBufSize = 1024 * 1024 * 2;
+    uint32_t stored_size;
+    StreamReader::ReadObj(reader, stored_size);
+    ByteBuffer buffer(kBufSize, allocator_);
+    uint64_t offset = 0;
+    auto& stream = reader.ref;
+    while (offset < stored_size) {
+        auto cur_size = std::min(kBufSize, stored_size - offset);
+        stream.Read(reinterpret_cast<char*>(buffer.data), cur_size);
+        io_->Write(buffer.data, cur_size, offset);
+        offset += cur_size;
+    }
     this->offset_io_->Deserialize(reader);
     this->quantizer_->Deserialize(reader);
 }
@@ -48,7 +60,17 @@ void
 SparseVectorDataCell<QuantTmpl, IOTmpl>::Serialize(StreamWriter& writer) {
     FlattenInterface::Serialize(writer);
     StreamWriter::WriteObj(writer, current_offset_);
-    this->io_->Serialize(writer);
+    // Serialize only actual data, not the full io_ pre-allocation (which is mostly zeros)
+    constexpr uint64_t kBufSize = 1024 * 1024 * 2;
+    StreamWriter::WriteObj(writer, current_offset_);
+    ByteBuffer buffer(kBufSize, allocator_);
+    uint64_t offset = 0;
+    while (offset < current_offset_) {
+        auto cur_size = std::min(kBufSize, current_offset_ - offset);
+        io_->Read(cur_size, offset, buffer.data);
+        writer.Write(reinterpret_cast<const char*>(buffer.data), cur_size);
+        offset += cur_size;
+    }
     this->offset_io_->Serialize(writer);
     this->quantizer_->Serialize(writer);
 }
@@ -100,10 +122,10 @@ SparseVectorDataCell<QuantTmpl, IOTmpl>::InsertVector(const void* vector, InnerI
         std::lock_guard lock(current_offset_mutex_);
         old_offset = current_offset_;
         current_offset_ += actual_code_size;
+        io_->Write(codes, actual_code_size, old_offset);
+        offset_io_->Write(
+            (uint8_t*)&old_offset, sizeof(current_offset_), idx * sizeof(current_offset_));
     }
-    offset_io_->Write(
-        (uint8_t*)&old_offset, sizeof(current_offset_), idx * sizeof(current_offset_));
-    io_->Write(codes, actual_code_size, old_offset);
     allocator_->Deallocate(codes);
 }
 
